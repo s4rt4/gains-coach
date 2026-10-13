@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowRight, Droplet, Dumbbell, Loader2, Lock, Mail, MessageCircle } from "lucide-react";
+import { Activity, ArrowRight, Droplet, Dumbbell, Loader2, Lock, Mail, MessageCircle, Shield, UserRound } from "lucide-react";
 
 const features = [
   { icon: MessageCircle, title: "A coach that knows your data", detail: "Ask anything, 24/7, by text or voice" },
@@ -11,17 +11,25 @@ const features = [
   { icon: Droplet, title: "Blood work, explained", detail: "Know what to raise with your doctor" },
 ];
 
+const demoEmail = { member: "tom.walker@example.com", admin: "admin@example.com" };
+
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("tom.walker@example.com");
+  const [role, setRole] = useState<"member" | "admin">("member");
+  const [email, setEmail] = useState(demoEmail.member);
   const [password, setPassword] = useState("demo-password");
   const [loading, setLoading] = useState(false);
+
+  const switchRole = (r: "member" | "admin") => {
+    setRole(r);
+    setEmail(demoEmail[r]);
+  };
 
   // Prototype only: no real authentication, any credentials continue to the demo account
   const signIn = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => router.push("/"), 900);
+    setTimeout(() => router.push(role === "admin" ? "/admin/" : "/"), 900);
   };
 
   return (
@@ -82,9 +90,27 @@ export default function LoginPage() {
           </div>
 
           <h2 className="font-display text-4xl font-bold uppercase leading-none">Welcome back</h2>
-          <p className="mt-2 text-sm text-muted">Sign in to see this week&apos;s coaching.</p>
+          <p className="mt-2 text-sm text-muted">
+            {role === "admin" ? "Manage members, partners and the coach." : <>Sign in to see this week&apos;s coaching.</>}
+          </p>
 
-          <form onSubmit={signIn} className="mt-8 space-y-4">
+          <div className="mt-8 grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
+            {(["member", "admin"] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => switchRole(r)}
+                className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition ${
+                  role === r ? "bg-accent text-accent-ink" : "text-muted hover:text-text"
+                }`}
+              >
+                {r === "member" ? <UserRound className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                {r === "member" ? "Member" : "Admin"}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={signIn} className="mt-5 space-y-4">
             <label className="block">
               <span className="text-xs font-medium text-muted">Email</span>
               <span className="mt-1.5 flex h-12 items-center gap-3 rounded-xl border border-line bg-surface px-4 focus-within:border-accent">

@@ -6,12 +6,19 @@ that data and are replayed with a streaming effect, so no API key is needed.
 
 ## Screens
 
-- **Login** (`/login`): demo sign-in, any credentials continue to the demo account
+- **Login** (`/login`): demo sign-in with a Member / Admin switch, any credentials work
 - **Dashboard** (`/`): bodyweight, strength, calories, Hevy workouts, coach insight
 - **Coach** (`/coach`): chat with suggested questions plus a simulated voice input
 - **Weekly check-in** (`/check-in`): scores, photos, notes, then a generated coaching report
 - **Blood work** (`/blood-work`): lab upload, marker ranges, then a prioritised review
 - **How it works** (`/engine`): data pipeline, integrations, guardrails
+
+Admin panel (`/admin`), for the business owner:
+
+- **Overview**: MRR, subscribers, AI cost per user, unit economics, safety review queue
+- **Users**: search and filter members, open a member's detail panel
+- **Influencers**: partner codes, referred revenue, payouts, add a partner
+- **Coach settings**: coach voice, models, knowledge base, guardrails, API key status
 
 ## Develop
 
@@ -34,6 +41,7 @@ npm run dev
 | Path | What |
 | --- | --- |
 | `src/data/persona.ts` | Demo user, 12 weeks of metrics, Hevy workouts, blood panel |
+| `src/data/admin.ts` | Demo business data for the admin panel |
 | `src/data/coach-responses.ts` | Claude-generated coach outputs used by the demo |
 | `src/lib/analytics.ts` | Trend maths, done in code rather than by the model |
 | `src/lib/coach.ts` | Coach engine entry point and where the live Claude call goes |
@@ -44,3 +52,7 @@ npm run dev
 Remove `output: "export"` from `next.config.ts`, add a server route that builds
 the user context and streams from the Claude API, then set `COACH_MODE = "live"`.
 The UI doesn't change.
+
+API keys (Claude, Stripe and so on) go in the hosting provider's environment
+variables, never in the admin UI or the browser. The admin panel only shows
+whether each one is configured.
