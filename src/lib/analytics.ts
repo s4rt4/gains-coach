@@ -1,6 +1,6 @@
 // Deterministic analytics. Numbers are computed in code and handed to Claude as
 // context, so the model interprets trends instead of doing arithmetic.
-import { profile, weeks } from "@/data/persona";
+import { bodyFatEstimates, profile, weeks } from "@/data/persona";
 
 const round = (n: number, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
 
@@ -44,3 +44,21 @@ export function getStats() {
 }
 
 export type Stats = ReturnType<typeof getStats>;
+
+/** Fat vs lean mass from the photo body-fat estimates (range midpoints) and that week's scale average. */
+export function getBodyComposition() {
+  const rows = bodyFatEstimates.map((e) => {
+    const kg = weeks[e.week - 1].avgWeightKg;
+    const midPct = (e.lowPct + e.highPct) / 2;
+    return { ...e, midPct, weightKg: kg, fatKg: round((kg * midPct) / 100), leanKg: round(kg * (1 - midPct / 100)) };
+  });
+  const first = rows[0], prev = rows[rows.length - 2], last = rows[rows.length - 1];
+  return {
+    rows,
+    latest: last,
+    previous: prev,
+    changePts: round(last.midPct - prev.midPct),
+    fatLostKg: round(first.fatKg - last.fatKg),
+    leanChangeKg: round(last.leanKg - first.leanKg),
+  };
+}

@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, Loader2, Sparkles } from "lucide-react";
+import { Camera, Check, Loader2, ScanLine, Sparkles } from "lucide-react";
+import { BodyFatChart } from "@/components/Charts";
 import { Markdown } from "@/components/Markdown";
-import { Silhouette } from "@/components/Silhouette";
+import { PhotoCompare } from "@/components/PhotoCompare";
 import { Card, CardTitle, PageHeader, Pill } from "@/components/ui";
 import { weeklyReport } from "@/data/coach-responses";
 import { weeks } from "@/data/persona";
+import { progressPhotos } from "@/data/progress-photos";
+import { getBodyComposition } from "@/lib/analytics";
 import { useStreamedText } from "@/lib/coach";
 
 const views = ["front", "side", "back"] as const;
@@ -24,6 +27,7 @@ const analysisSteps = [
   "Computing weight & waist trends",
   "Analysing 7 days of nutrition",
   "Comparing photos with week 8",
+  "Estimating body fat from your photos",
   "Coach is writing your report",
 ];
 
@@ -38,11 +42,9 @@ function PhotoSlot({ view, src, sample, onFile }: { view: View; src?: string; sa
         filled ? "border-transparent" : "border-line hover:border-accent"
       }`}
     >
-      {src ? (
+      {src || sample ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={`${view} progress`} className="h-full w-full object-cover" />
-      ) : sample ? (
-        <Silhouette view={view} />
+        <img src={src ?? progressPhotos[12][view]} alt={`${view} progress`} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full flex-col items-center justify-center gap-1.5 text-muted group-hover:text-accent">
           <Camera className="h-6 w-6" />
@@ -66,12 +68,76 @@ function PhotoSlot({ view, src, sample, onFile }: { view: View; src?: string; sa
   );
 }
 
+function BodyFatCard() {
+  const bc = getBodyComposition();
+  const { latest, previous } = bc;
+  return (
+    <Card className="mt-6">
+      <CardTitle action={<Pill tone="accent">From your 3 photos</Pill>}>
+        <span className="inline-flex items-center gap-2">
+          <ScanLine className="h-4 w-4 text-accent" /> Body fat estimate
+        </span>
+      </CardTitle>
+      <div className="grid gap-5 sm:grid-cols-5">
+        <div className="sm:col-span-2">
+          <p className="num font-display text-5xl font-bold leading-none">
+            {latest.lowPct}–{latest.highPct}
+            <span className="text-2xl text-muted">%</span>
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            <span className="font-semibold text-ok">{String(bc.changePts).replace("-", "−")} pts</span> since week {previous.week} ({previous.lowPct}–{previous.highPct}%)
+          </p>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex justify-between gap-3 border-b border-line pb-2">
+              <dt className="text-muted">Fat lost since week 1</dt>
+              <dd className="num font-semibold">≈ {bc.fatLostKg} kg</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted">Lean mass</dt>
+              <dd className="num font-semibold">
+                ≈ {latest.leanKg} kg <span className="font-normal text-ok">held</span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <div className="sm:col-span-3">
+          <BodyFatChart />
+        </div>
+      </div>
+      <div className="mt-6 border-t border-line pt-5">
+        <PhotoCompare />
+      </div>
+      <p className="mt-3 text-xs text-muted">
+        A visual estimate is good to about ±3%, so we show a range and watch the trend. Your coach weighs it together with your waist and scale data.
+      </p>
+    </Card>
+  );
+}
+
 function Report() {
   const { shown, done } = useStreamedText(weeklyReport, 4, 30);
   return (
     <div className={done ? "" : "caret"}>
       <Markdown text={shown} />
     </div>
+  );
+}
+
+function LastBodyFat() {
+  const { previous } = getBodyComposition();
+  return (
+    <Card>
+      <CardTitle>
+        <span className="inline-flex items-center gap-2">
+          <ScanLine className="h-4 w-4 text-accent" /> Last body fat estimate
+        </span>
+      </CardTitle>
+      <p className="num font-display text-3xl font-bold leading-none">
+        {previous.lowPct}–{previous.highPct}
+        <span className="text-lg text-muted">%</span>
+      </p>
+      <p className="mt-2 text-xs text-muted">Week {previous.week}, from your photos. Add this week&apos;s photos and your coach estimates it again.</p>
+    </Card>
   );
 }
 
@@ -233,6 +299,7 @@ export default function CheckInPage() {
             </dl>
             <p className="mt-3 text-xs text-muted">You only fill in what apps can&apos;t measure. The rest is pulled in automatically.</p>
           </Card>
+          <LastBodyFat />
         </aside>
       </div>
 
@@ -257,9 +324,12 @@ export default function CheckInPage() {
           </Card>
         )}
         {phase === "report" && (
-          <Card className="mt-6 border-accent/30">
-            <Report />
-          </Card>
+          <>
+            <BodyFatCard />
+            <Card className="mt-6 border-accent/30">
+              <Report />
+            </Card>
+          </>
         )}
       </div>
     </>

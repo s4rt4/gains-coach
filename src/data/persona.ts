@@ -85,6 +85,16 @@ export const dailyWeights = weeks.flatMap((w) =>
   }),
 );
 
+// Body-fat estimates from the front/side/back check-in photos. The vision model returns a
+// range, not a single number: a photo estimate is only good to about ±3%, so the range is
+// what we store and show. Used for the trend, alongside waist and scale data.
+export const bodyFatEstimates = [
+  { week: 1, lowPct: 20, highPct: 23 },
+  { week: 4, lowPct: 19, highPct: 22 },
+  { week: 8, lowPct: 17.5, highPct: 20.5 },
+  { week: 12, lowPct: 16, highPct: 19 },
+];
+
 // Last 4 weeks: weekday vs weekend calories (from the nutrition import)
 export const weekendSplit = { weekdayKcal: 2310, weekendKcal: 3360 };
 

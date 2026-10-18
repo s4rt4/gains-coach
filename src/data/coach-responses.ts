@@ -130,6 +130,7 @@ A solid training week, but weekend eating and fewer steps have stalled the scale
 ### Progress this week
 - **Bodyweight:** 7-day average **88.1 kg** (−0.1 kg). Total since the start of the cut: **−4.0 kg**.
 - **Waist:** **86.5 cm** (−0.5 cm), still moving even though the scale has stalled.
+- **Body fat (photo estimate):** **16–19%**, down from 17.5–20.5% at week 8. Lean mass is holding at about **72.7 kg**, so the weight you've lost is fat, not muscle.
 - **Photos:** compared with week 8, your lower abs and obliques are more defined and your waist looks tighter from the side. Shoulders and upper chest are keeping their fullness.
 
 ### Fat loss trend

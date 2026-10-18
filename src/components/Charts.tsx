@@ -3,8 +3,11 @@
 import {
   Area,
   Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -15,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 import { dailyWeights, profile, weeks } from "@/data/persona";
+import { getBodyComposition } from "@/lib/analytics";
 
 const C = {
   accent: "#d4ff3a",
@@ -107,6 +111,48 @@ export function CaloriesChart({ className = "h-56" }: { className?: string }) {
           />
           <Bar dataKey="kcal" radius={[6, 6, 0, 0]} fill="#3a3f48" activeBar={{ fill: C.accent }} />
         </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Photo body-fat estimate per check-in, drawn as a range (low–high), latest one highlighted. */
+export function BodyFatChart() {
+  const { rows } = getBodyComposition();
+  const data = rows.map((r) => ({ week: `W${r.week}`, range: [r.lowPct, r.highPct] as [number, number], label: `${r.lowPct}–${r.highPct}%` }));
+  const lastIdx = data.length - 1;
+  return (
+    <div className="h-48 w-full">
+      <ResponsiveContainer>
+        <BarChart data={data} margin={{ top: 20, right: 8, left: -18, bottom: 0 }}>
+          <CartesianGrid stroke={C.line} vertical={false} />
+          <XAxis dataKey="week" {...axis} />
+          <YAxis domain={[14, 24]} ticks={[14, 16, 18, 20, 22, 24]} tickFormatter={(v) => `${v}%`} {...axis} />
+          <Tooltip
+            {...tooltipStyle}
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
+            formatter={(v) => {
+              const [lo, hi] = v as unknown as [number, number];
+              return [`${lo}–${hi}% (mid ${(lo + hi) / 2}%)`, "Body fat"];
+            }}
+          />
+          <Bar dataKey="range" barSize={18} radius={4} isAnimationActive={false}>
+            {data.map((_, i) => (
+              <Cell key={i} fill={i === lastIdx ? C.accent : "#4a5122"} />
+            ))}
+            <LabelList
+              dataKey="label"
+              position="top"
+              content={({ x, y, width, value, index }) =>
+                index === lastIdx ? (
+                  <text x={Number(x) + Number(width) / 2} y={Number(y) - 6} textAnchor="middle" fill="#f2f3f5" fontSize={11} fontWeight={600}>
+                    {String(value)}
+                  </text>
+                ) : null
+              }
+            />
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
