@@ -152,7 +152,7 @@ export default function LoginPage() {
 
           <p className="mt-8 text-center text-sm text-muted">
             New here?{" "}
-            <Link href="/" className="font-semibold text-accent hover:underline">
+            <Link href="/onboarding/" className="font-semibold text-accent hover:underline">
               Start your 7-day free trial
             </Link>
           </p>

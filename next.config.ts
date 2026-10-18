@@ -8,6 +8,7 @@ const basePath = process.env.BASE_PATH || "";
 const nextConfig: NextConfig = {
   output: "export",
   basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath }, // for /public files (service worker, icons)
   trailingSlash: true,
   images: { unoptimized: true },
   // Hide the dev-only "N" badge so it doesn't cover the nav in screen recordings

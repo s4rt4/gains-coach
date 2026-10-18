@@ -191,11 +191,22 @@ Slightly low, which is common in the UK from October. A daily supplement is a se
 - **Glucose, HbA1c, prolactin, PSA, ferritin and triglycerides** are all within range.
 - **Testosterone (high) and LH (suppressed)** are what we'd expect given what you declared during onboarding.
 
+### Protocol adjustments
+Your haematocrit and oestradiol are both moving the wrong way at **250 mg/week in one weekly shot**, so this is where I'd start:
+
+1. **Bring the dose down to 150–175 mg/week.** Haematocrit and oestradiol both track the dose, so this is the biggest lever.
+2. **Split it into 2 injections (Mon/Thu).** Same weekly total, lower peaks, less conversion to oestradiol.
+3. **Don't add an aromatase inhibitor yet.** Let the dose change work first; an AI now would likely push your HDL even lower.
+4. **Keep orals out** while HDL is 0.82 and liver enzymes are raised.
+5. If haematocrit is **still 0.52 or higher on the re-test**, ask your clinic about venesection.
+
+Go through these with your prescriber before changing anything.
+
 ### Questions to take to your doctor
-1. Do you want to manage my haematocrit of 0.53, and how?
+1. Can we lower my dose to 150–175 mg/week, split twice weekly, to bring my haematocrit (0.53) and oestradiol down?
 2. Given my lipid profile, should I have a cardiovascular risk assessment or blood pressure check?
 3. Can I have a cystatin C test to confirm my kidney function?
 4. Can we repeat my liver enzymes after a 72-hour training break?
 
 ### Suggested re-test
-**8–12 weeks**, or sooner if your doctor advises. Before the test: 72 hours with no training, normal hydration, and stop creatine for a week if you want a cleaner creatinine reading.`;
+**6–8 weeks after the dose change**, or sooner if your doctor advises. Before the test: 72 hours with no training, normal hydration, and stop creatine for a week if you want a cleaner creatinine reading.`;

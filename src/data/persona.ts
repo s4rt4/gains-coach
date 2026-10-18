@@ -244,3 +244,76 @@ export const bloodWork: MarkerGroup[] = [
     ],
   },
 ];
+
+// Protocol declared during onboarding (only used to interpret blood work).
+export const declaredProtocol = {
+  since: "2026-03",
+  items: [
+    { name: "Testosterone enanthate", detail: "250 mg / week", schedule: "1 injection, Mondays" },
+    { name: "Creatine monohydrate", detail: "5 g / day", schedule: "Daily" },
+    { name: "Oral compounds", detail: "None", schedule: "—" },
+    { name: "Aromatase inhibitor", detail: "None", schedule: "—" },
+  ],
+};
+
+export type ProtocolChange = {
+  area: string;
+  current: string;
+  suggested: string;
+  why: string;
+  markers: string[]; // marker names this change responds to
+  priority: "now" | "next" | "keep";
+};
+
+// Adjustments the coach suggests from the 9 Oct panel. In production these come from Claude
+// working from the coaching knowledge base (professional protocol resources), not general web data.
+export const protocolChanges: ProtocolChange[] = [
+  {
+    area: "Weekly dose",
+    current: "250 mg / week",
+    suggested: "150–175 mg / week",
+    why: "Haematocrit (0.53) and oestradiol (245) are both above range and still rising. Both usually follow the dose, so bringing it down is the first lever.",
+    markers: ["Haematocrit", "Haemoglobin", "Oestradiol (E2)"],
+    priority: "now",
+  },
+  {
+    area: "Injection frequency",
+    current: "1 × week",
+    suggested: "2 × week (Mon / Thu)",
+    why: "Splitting the same weekly amount gives lower peaks. Lower peaks mean less conversion to oestradiol and less push on red blood cell production.",
+    markers: ["Oestradiol (E2)", "Haematocrit"],
+    priority: "now",
+  },
+  {
+    area: "Aromatase inhibitor",
+    current: "None",
+    suggested: "Don't add one yet",
+    why: "Oestradiol should drop with the dose change. Adding an AI now risks crashing it and makes HDL worse. Re-assess on the next panel and only if you have symptoms.",
+    markers: ["Oestradiol (E2)", "HDL cholesterol"],
+    priority: "keep",
+  },
+  {
+    area: "Orals",
+    current: "None",
+    suggested: "Keep them out",
+    why: "Your HDL is already low (0.82) and ALT/AST are raised. Oral compounds hit both hardest.",
+    markers: ["HDL cholesterol", "ALT", "AST"],
+    priority: "keep",
+  },
+  {
+    area: "Haematocrit plan",
+    current: "—",
+    suggested: "Ask about venesection if ≥ 0.52 on re-test",
+    why: "If it stays high after the dose change, a clinician-led blood draw (or blood donation where eligible) is the standard way to bring it down.",
+    markers: ["Haematocrit"],
+    priority: "next",
+  },
+  {
+    area: "Creatine",
+    current: "5 g / day",
+    suggested: "Keep, but pause 7 days before the next test",
+    why: "It's not a problem for your kidneys, but it inflates creatinine and makes eGFR look worse than it is.",
+    markers: ["Creatinine", "eGFR"],
+    priority: "next",
+  },
+];

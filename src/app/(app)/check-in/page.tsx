@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Camera, Check, Loader2, ScanLine, Sparkles } from "lucide-react";
 import { BodyFatChart } from "@/components/Charts";
 import { Markdown } from "@/components/Markdown";
@@ -44,7 +45,7 @@ function PhotoSlot({ view, src, sample, onFile }: { view: View; src?: string; sa
     >
       {src || sample ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src ?? progressPhotos[12][view]} alt={`${view} progress`} className="h-full w-full object-cover" />
+        <img src={src ?? progressPhotos[12]![view]} alt={`${view} progress`} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full flex-col items-center justify-center gap-1.5 text-muted group-hover:text-accent">
           <Camera className="h-6 w-6" />
@@ -106,6 +107,11 @@ function BodyFatCard() {
       </div>
       <div className="mt-6 border-t border-line pt-5">
         <PhotoCompare />
+        <p className="mt-3 text-center">
+          <Link href="/progress/" className="text-sm font-medium text-accent hover:underline">
+            All progress photos
+          </Link>
+        </p>
       </div>
       <p className="mt-3 text-xs text-muted">
         A visual estimate is good to about ±3%, so we show a range and watch the trend. Your coach weighs it together with your waist and scale data.

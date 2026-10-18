@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, FileText, Loader2, ShieldAlert, Sparkles, Upload } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, FileText, Loader2, ShieldAlert, Sparkles, Syringe, Upload } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 import { Card, CardTitle, PageHeader, Pill } from "@/components/ui";
 import { bloodWorkAnalysis } from "@/data/coach-responses";
-import { bloodTest, bloodWork, type Marker, type MarkerStatus } from "@/data/persona";
+import { bloodTest, bloodWork, declaredProtocol, protocolChanges, type Marker, type MarkerStatus, type ProtocolChange } from "@/data/persona";
 import { useStreamedText } from "@/lib/coach";
 
 const statusLabel: Record<MarkerStatus, string> = { ok: "Normal", watch: "Watch", flag: "Discuss", expected: "Expected" };
@@ -70,6 +70,71 @@ function MarkerRow({ m }: { m: Marker }) {
   );
 }
 
+const priority: Record<ProtocolChange["priority"], { label: string; tone: "flag" | "watch" | "ok" }> = {
+  now: { label: "Change now", tone: "flag" },
+  next: { label: "Next step", tone: "watch" },
+  keep: { label: "Keep as is", tone: "ok" },
+};
+
+function ProtocolCard() {
+  return (
+    <Card className="mt-6">
+      <CardTitle action={<Pill tone="accent">Based on this panel</Pill>}>
+        <span className="inline-flex items-center gap-2">
+          <Syringe className="h-4 w-4 text-accent" /> Protocol adjustments
+        </span>
+      </CardTitle>
+
+      <div className="mb-5 rounded-xl border border-line bg-surface-2 p-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted">Declared protocol · since March 2026</p>
+        <ul className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          {declaredProtocol.items.map((i) => (
+            <li key={i.name} className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-muted">{i.name}</span>
+              <span className="num text-right font-semibold">
+                {i.detail}
+                {i.schedule !== "—" && <span className="ml-1.5 font-normal text-muted">· {i.schedule}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <ul className="space-y-3">
+        {protocolChanges.map((c) => (
+          <li key={c.area} className="rounded-xl border border-line p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-semibold">{c.area}</p>
+              <Pill tone={priority[c.priority].tone}>{priority[c.priority].label}</Pill>
+            </div>
+            <p className="num mt-2 flex flex-wrap items-center gap-2 text-sm">
+              {c.priority !== "keep" && c.current !== "—" && (
+                <>
+                  <span className="text-muted line-through decoration-muted/60">{c.current}</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted" />
+                </>
+              )}
+              <span className="font-semibold text-accent">{c.suggested}</span>
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-text/80">{c.why}</p>
+            <p className="mt-2 flex flex-wrap gap-1.5">
+              {c.markers.map((m) => (
+                <span key={m} className="rounded-md bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
+                  {m}
+                </span>
+              ))}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-xs leading-relaxed text-muted">
+        Re-test 6–8 weeks after changing the dose. Suggestions come from the coaching knowledge base and your results; go through any
+        change with your prescriber or clinic before you make it.
+      </p>
+    </Card>
+  );
+}
+
 function Analysis() {
   const { shown, done } = useStreamedText(bloodWorkAnalysis, 4, 30);
   return (
@@ -105,8 +170,8 @@ export default function BloodWorkPage() {
       <div className="mb-5 flex gap-3 rounded-2xl border border-info/25 bg-info/[0.07] p-4 text-sm text-text/80">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-info" />
         <p>
-          Gains Coach helps you <strong className="text-text">understand your results and prepare for your doctor</strong>. It
-          doesn&apos;t diagnose, prescribe or replace medical advice.
+          Gains Coach explains your results and <strong className="text-text">suggests protocol adjustments</strong> based on
+          them. It isn&apos;t a diagnosis: go through any change with your prescriber or clinic.
         </p>
       </div>
 
@@ -166,6 +231,8 @@ export default function BloodWorkPage() {
           <p className="mt-3 flex items-center gap-2 text-xs text-muted">
             <span className="h-2 w-2 rounded-full border border-muted" /> Hollow dot = previous test ({fmtDate(bloodTest.previousDate)})
           </p>
+
+          <ProtocolCard />
 
           {!analyse && (
             <button

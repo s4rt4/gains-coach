@@ -9,6 +9,11 @@ const icons = { hevy: Dumbbell, nutrition: Utensils, health: HeartPulse };
 
 export function SyncCard() {
   const [state, setState] = useState<"idle" | "syncing" | "done">("idle");
+  const [linked, setLinked] = useState<Record<string, "linking" | "done">>({});
+  const connect = (id: string) => {
+    setLinked((l) => ({ ...l, [id]: "linking" }));
+    setTimeout(() => setLinked((l) => ({ ...l, [id]: "done" })), 1400);
+  };
 
   const sync = () => {
     setState("syncing");
@@ -34,7 +39,7 @@ export function SyncCard() {
       <ul className="space-y-3">
         {connections.map((c) => {
           const Icon = icons[c.id as keyof typeof icons];
-          const connected = c.status === "connected";
+          const connected = c.status === "connected" || linked[c.id] === "done";
           return (
             <li key={c.id} className="flex items-center gap-3">
               <span
@@ -47,7 +52,13 @@ export function SyncCard() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{c.name}</p>
                 <p className="truncate text-xs text-muted">
-                  {connected ? (state === "done" ? "Up to date · just now" : `${c.detail} · ${c.lastSync}`) : c.detail}
+                  {linked[c.id] === "done"
+                    ? "Connected · first sync running"
+                    : connected
+                      ? state === "done"
+                        ? "Up to date · just now"
+                        : `${c.detail} · ${c.lastSync}`
+                      : c.detail}
                 </p>
               </div>
               {connected ? (
@@ -57,7 +68,13 @@ export function SyncCard() {
                   <Check className="h-4 w-4 text-ok" />
                 )
               ) : (
-                <button className="rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-medium text-text hover:bg-line">Connect</button>
+                <button
+                  onClick={() => connect(c.id)}
+                  disabled={linked[c.id] === "linking"}
+                  className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-1 text-xs font-medium text-text hover:bg-line disabled:opacity-70"
+                >
+                  {linked[c.id] === "linking" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+                </button>
               )}
             </li>
           );
