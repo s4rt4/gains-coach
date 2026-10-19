@@ -6,9 +6,12 @@ import { visemesFor } from "./lipsync";
 
 export type Expression = "neutral" | "happy" | "hype" | "serious" | "thinking";
 
+/** Pre-rendered speech: an audio file plus word timings ([startMs, durationMs, word]). */
+export type SpeechClip = { src: string; words: [number, number, string][] };
+
 export type CoachJimHandle = {
-  /** Say `text` with the browser voice and lip-sync. Resolves when he stops talking. */
-  speak: (text: string) => Promise<void>;
+  /** Say `text` and lip-sync it: from `clip` when given, else the browser voice. Resolves when he stops talking. */
+  speak: (text: string, clip?: SpeechClip) => Promise<void>;
   stop: () => void;
   setExpression: (e: Expression) => void;
 };
@@ -47,6 +50,8 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
   const state = useRef({ expression: "neutral" as Expression, talking: false, lids: "open" as Lids });
   const talkTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const finish = useRef<(() => void) | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const frame = useRef(0);
 
   const part = (id: string) => host.current?.querySelector<SVGGElement>(`[id="${id}"]`) ?? null;
 
@@ -96,11 +101,14 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
 
   // The shapes for one word fill ~75% of its time, then the mouth rests (closed) until the next word.
   const MIN_SHAPE_MS = 95; // slower = calmer mouth; long words keep only a few evenly spaced shapes
-  const wordSteps = (word: string, totalMs: number): Step[] => {
+  const shapesFor = (word: string, totalMs: number) => {
     const all = visemesFor(word);
-    if (!all.length) return [];
     const room = Math.max(1, Math.floor((totalMs * 0.75) / MIN_SHAPE_MS));
-    const shapes = all.length <= room ? all : Array.from({ length: room }, (_, i) => all[Math.floor((i * all.length) / room)]);
+    return all.length <= room ? all : Array.from({ length: room }, (_, i) => all[Math.floor((i * all.length) / room)]);
+  };
+  const wordSteps = (word: string, totalMs: number): Step[] => {
+    const shapes = shapesFor(word, totalMs);
+    if (!shapes.length) return [];
     const per = Math.max(MIN_SHAPE_MS, (totalMs * 0.75) / shapes.length);
     const pause = /[.!?]$/.test(word) ? 380 : /[,;:]$/.test(word) ? 220 : Math.max(90, totalMs * 0.25);
     return [...shapes.map((v): Step => [v, per]), ["X", pause]];
@@ -111,6 +119,9 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
 
   const stop = () => {
     clearTimeout(talkTimer.current);
+    cancelAnimationFrame(frame.current);
+    audio.current?.pause();
+    audio.current = null;
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     state.current.talking = false;
     rest();
@@ -118,7 +129,40 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
     finish.current = null;
   };
 
-  const speak = (text: string) =>
+  /** Plays a pre-rendered clip; the mouth follows the audio clock, so it stays in sync. False if it can't play. */
+  const playClip = (clip: SpeechClip, end: () => void) => {
+    const a = new Audio(clip.src);
+    audio.current = a;
+    const words = clip.words.map(([t, d, w]) => ({ t, d, shapes: shapesFor(w, d) }));
+    // The demo recorder (headless Chrome) has no real audio output, so its audio clock drifts from the
+    // screen. It sets __coachClock = "wall": the mouth then follows the page clock from the moment
+    // playback starts, and that moment is reported so the video soundtrack can be lined up with it.
+    const rec = window as { __coachClock?: string; __coachAudio?: (src: string, startMs: number) => void };
+    const wall = rec.__coachClock === "wall";
+    const last = clip.words.at(-1);
+    const endMs = last ? last[0] + last[1] + 250 : 0;
+    let t0 = 0;
+    const tick = () => {
+      const ms = wall ? performance.now() - t0 : a.currentTime * 1000;
+      if (wall && ms > endMs) return end();
+      const w = words.find((x) => ms >= x.t && ms < x.t + x.d);
+      const f = w ? (ms - w.t) / (w.d * 0.75) : 1;
+      showMouth(w && f < 1 && w.shapes.length ? w.shapes[Math.floor(f * w.shapes.length)] : "X");
+      frame.current = requestAnimationFrame(tick);
+    };
+    a.onplaying = () => {
+      cancelAnimationFrame(frame.current);
+      if (!t0) {
+        t0 = performance.now();
+        rec.__coachAudio?.(clip.src, performance.timeOrigin + t0);
+      }
+      tick();
+    };
+    if (!wall) a.onended = end;
+    return a.play().then(() => true, () => false);
+  };
+
+  const speak = (text: string, clip?: SpeechClip) =>
     new Promise<void>((resolve) => {
       stop();
       state.current.talking = true;
@@ -132,31 +176,44 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
         resolve();
       };
 
-      if (!("speechSynthesis" in window)) {
-        play(timedSequence(text), end);
+      if (clip) {
+        playClip(clip, end).then((ok) => {
+          if (!ok && state.current.talking) {
+            audio.current = null;
+            browserVoice(text, end);
+          }
+        });
         return;
       }
-      const u = new SpeechSynthesisUtterance(text);
-      const voice = pickVoice();
-      if (voice) u.voice = voice;
-      u.pitch = 0.8;
-      let gotBoundary = false;
-      u.onboundary = (ev) => {
-        if (ev.name && ev.name !== "word") return;
-        gotBoundary = true;
-        const word = text.slice(ev.charIndex).split(/\s+/)[0] ?? "";
-        // if the voice moved on before the last word's rest, close the mouth briefly first
-        const mid = part("mouth-X")?.style.display === "none";
-        play([...(mid ? ([["X", 70]] as Step[]) : []), ...wordSteps(word, wordMs(word))]);
-      };
-      u.onend = end;
-      u.onerror = end;
-      window.speechSynthesis.speak(u);
-      // Some voices never fire word events: animate on a timer instead.
-      setTimeout(() => {
-        if (state.current.talking && !gotBoundary) play(timedSequence(text));
-      }, 700);
+      browserVoice(text, end);
     });
+
+  const browserVoice = (text: string, end: () => void) => {
+    if (!("speechSynthesis" in window)) {
+      play(timedSequence(text), end);
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    const voice = pickVoice();
+    if (voice) u.voice = voice;
+    u.pitch = 0.8;
+    let gotBoundary = false;
+    u.onboundary = (ev) => {
+      if (ev.name && ev.name !== "word") return;
+      gotBoundary = true;
+      const word = text.slice(ev.charIndex).split(/\s+/)[0] ?? "";
+      // if the voice moved on before the last word's rest, close the mouth briefly first
+      const mid = part("mouth-X")?.style.display === "none";
+      play([...(mid ? ([["X", 70]] as Step[]) : []), ...wordSteps(word, wordMs(word))]);
+    };
+    u.onend = end;
+    u.onerror = end;
+    window.speechSynthesis.speak(u);
+    // Some voices never fire word events: animate on a timer instead.
+    setTimeout(() => {
+      if (state.current.talking && !gotBoundary) play(timedSequence(text));
+    }, 700);
+  };
 
   useImperativeHandle(ref, () => ({ speak, stop, setExpression }));
 

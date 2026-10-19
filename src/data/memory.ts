@@ -21,20 +21,20 @@ export const memoryCategories: MemoryCategory[] = ["Goals", "Training", "Nutriti
 export const memories: MemoryItem[] = [
   { id: "g1", category: "Goals", text: "You want to be 85 kg by 20 December, for a holiday on the 22nd.", source: "You told me", where: "Onboarding", date: "2026-07-20", usedIn: "Am I on track for my goal?", pinned: true },
   { id: "g2", category: "Goals", text: "Keeping your squat and deadlift strength through the cut matters most to you.", source: "You told me", where: "Chat", date: "2026-08-02", usedIn: "Week 12 report" },
-  { id: "g3", category: "Goals", text: "You plan a lean bulk from January and want a bench PR in the spring.", source: "You told me", where: "Chat", date: "2026-09-14" },
+  { id: "g3", category: "Goals", text: "You plan a lean bulk from January and want a bench PR in the spring.", source: "You told me", where: "Chat", date: "2026-09-14", usedIn: "What happens after the cut finishes?" },
 
   { id: "t1", category: "Training", text: "You train at 06:30 before work, so sessions have to fit in 75 minutes.", source: "You told me", where: "Onboarding", date: "2026-07-20", usedIn: "Should I change my workout programme?" },
-  { id: "t2", category: "Training", text: "Upright rows and behind-the-neck pressing irritate your left shoulder. Cable laterals are fine.", source: "You told me", where: "Chat", date: "2026-08-11", pinned: true },
+  { id: "t2", category: "Training", text: "Upright rows and behind-the-neck pressing irritate your left shoulder. Cable laterals are fine.", source: "You told me", where: "Chat", date: "2026-08-11", usedIn: "My left shoulder hurts on overhead press", pinned: true },
   { id: "t3", category: "Training", text: "Bench is your priority lift, and the one that frustrates you most.", source: "From your data", where: "Hevy + chats", date: "2026-09-29", usedIn: "How can I improve my bench press?" },
   { id: "t4", category: "Training", text: "In high-stress weeks you skip a session rather than do a shorter one (weeks 9 and 11).", source: "From your data", where: "Hevy", date: "2026-10-05", usedIn: "Should I change my workout programme?" },
 
   { id: "n1", category: "Nutrition", text: "You don't eat fish. Chicken, turkey, beef and dairy are your protein sources.", source: "You told me", where: "Onboarding", date: "2026-07-20", usedIn: "Meal prep plan", pinned: true },
   { id: "n2", category: "Nutrition", text: "You can't face a big breakfast at 06:00. Overnight oats work.", source: "You told me", where: "Chat", date: "2026-07-27", usedIn: "Meal prep plan" },
-  { id: "n3", category: "Nutrition", text: "Saturday is usually a takeaway and drinks with friends.", source: "From your data", where: "Nutrition log", date: "2026-09-21", usedIn: "Should I reduce my calories this week?" },
-  { id: "n4", category: "Nutrition", text: "You have three coffees a day with semi-skimmed milk (about 100 kcal).", source: "You told me", where: "Check-in, week 3", date: "2026-08-03" },
+  { id: "n3", category: "Nutrition", text: "Saturday is usually a takeaway and drinks with friends.", source: "From your data", where: "Nutrition log", date: "2026-09-21", usedIn: "What should I order at the takeaway on Saturday?" },
+  { id: "n4", category: "Nutrition", text: "You have three coffees a day with semi-skimmed milk (about 100 kcal).", source: "You told me", where: "Check-in, week 3", date: "2026-08-03", usedIn: "How do I fix my sleep?" },
 
   { id: "l1", category: "Lifestyle", text: "You work a desk job in finance. Month-end deadlines push your stress up and steps down.", source: "From your data", where: "Check-ins", date: "2026-09-28", usedIn: "Week 12 report" },
-  { id: "l2", category: "Lifestyle", text: "Late-night phone scrolling cuts your sleep; the goal is screens off at 23:00.", source: "You told me", where: "Check-in, week 10", date: "2026-09-21", usedIn: "Week 12 report" },
+  { id: "l2", category: "Lifestyle", text: "Late-night phone scrolling cuts your sleep; the goal is screens off at 23:00.", source: "You told me", where: "Check-in, week 10", date: "2026-09-21", usedIn: "How do I fix my sleep?" },
   { id: "l3", category: "Lifestyle", text: "Your partner cooks dinner two or three nights a week.", source: "You told me", where: "Chat", date: "2026-08-18" },
 
   { id: "h1", category: "Health", text: "You declared testosterone use at onboarding. It's only used to interpret blood work.", source: "You told me", where: "Onboarding", date: "2026-07-20", usedIn: "Blood work review" },
