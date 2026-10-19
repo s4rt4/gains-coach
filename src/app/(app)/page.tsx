@@ -82,7 +82,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-gradient-to-r from-accent to-ok" style={{ width: `${goalPct}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-accent to-ok" style={{ width: `${Math.min(100, Math.max(0, goalPct))}%` }} />
           </div>
           <dl className="mt-5 space-y-2.5 text-sm">
             {[

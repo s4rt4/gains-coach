@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Activity, ArrowRight, Droplet, Dumbbell, Loader2, Lock, Mail, MessageCircle, Shield, UserRound } from "lucide-react";
@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState(demoEmail.member);
   const [password, setPassword] = useState("demo-password");
   const [loading, setLoading] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const switchRole = (r: "member" | "admin") => {
     setRole(r);
@@ -28,8 +30,9 @@ export default function LoginPage() {
   // Prototype only: no real authentication, any credentials continue to the demo account
   const signIn = (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
-    setTimeout(() => router.push(role === "admin" ? "/admin/" : "/"), 900);
+    timer.current = setTimeout(() => router.push(role === "admin" ? "/admin/" : "/"), 900);
   };
 
   return (

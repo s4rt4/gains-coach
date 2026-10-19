@@ -32,7 +32,8 @@ export function useInstall() {
     const update = () => {
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone;
-      const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      // iPadOS 13+ reports a Mac user agent; touch support tells it apart
+      const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
       setState(standalone ? "installed" : deferred ? "prompt" : ios ? "ios" : "unsupported");
     };
     update();
@@ -41,9 +42,12 @@ export function useInstall() {
   }, []);
   const install = async () => {
     if (!deferred) return;
-    await deferred.prompt();
-    await deferred.userChoice;
-    deferred = null;
+    const e = deferred;
+    deferred = null; // a prompt event can only be used once
+    try {
+      await e.prompt();
+      await e.userChoice;
+    } catch {}
     listeners.forEach((f) => f());
   };
   return { state, install };

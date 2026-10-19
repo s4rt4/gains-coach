@@ -13,9 +13,6 @@ import { progressPhotos } from "@/data/progress-photos";
 import { getBodyComposition } from "@/lib/analytics";
 import { useStreamedText } from "@/lib/coach";
 
-const views = ["front", "side", "back"] as const;
-type View = (typeof views)[number];
-
 const scales = [
   { key: "energy", label: "Energy", low: "Drained", high: "Great" },
   { key: "hunger", label: "Hunger", low: "None", high: "Starving" },
@@ -27,25 +24,26 @@ const analysisSteps = [
   "Pulling 5 workouts from Hevy",
   "Computing weight & waist trends",
   "Analysing 7 days of nutrition",
-  "Comparing photos with week 8",
-  "Estimating body fat from your photos",
+  "Comparing your photo with week 8",
+  "Estimating body fat from your photo",
   "Coach is writing your report",
 ];
 
-function PhotoSlot({ view, src, sample, onFile }: { view: View; src?: string; sample: boolean; onFile: (url: string) => void }) {
+function PhotoSlot({ src, sample, onFile }: { src?: string; sample: boolean; onFile: (url: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const filled = !!src || sample;
   return (
     <button
       type="button"
       onClick={() => ref.current?.click()}
-      className={`group relative aspect-[3/5] overflow-hidden rounded-xl border-2 border-dashed transition ${
+      aria-label={filled ? "Replace front photo" : "Add front photo"}
+      className={`group relative aspect-[3/5] w-full overflow-hidden rounded-xl border-2 border-dashed transition ${
         filled ? "border-transparent" : "border-line hover:border-accent"
       }`}
     >
       {src || sample ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src ?? progressPhotos[12]![view]} alt={`${view} progress`} className="h-full w-full object-cover" />
+        <img src={src ?? progressPhotos[12]!.front} alt="Front progress photo" className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full flex-col items-center justify-center gap-1.5 text-muted group-hover:text-accent">
           <Camera className="h-6 w-6" />
@@ -53,16 +51,19 @@ function PhotoSlot({ view, src, sample, onFile }: { view: View; src?: string; sa
         </span>
       )}
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4 text-left text-[11px] font-semibold uppercase tracking-wider">
-        {view}
+        Front
       </span>
       <input
         ref={ref}
         type="file"
         accept="image/*"
         className="hidden"
+        // keep the programmatic click from bubbling back into the slot button
+        onClick={(e) => e.stopPropagation()}
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) onFile(URL.createObjectURL(f));
+          e.target.value = ""; // allow re-picking the same file
         }}
       />
     </button>
@@ -74,7 +75,7 @@ function BodyFatCard() {
   const { latest, previous } = bc;
   return (
     <Card className="mt-6">
-      <CardTitle action={<Pill tone="accent">From your 3 photos</Pill>}>
+      <CardTitle action={<Pill tone="accent">From your front photo</Pill>}>
         <span className="inline-flex items-center gap-2">
           <ScanLine className="h-4 w-4 text-accent" /> Body fat estimate
         </span>
@@ -142,7 +143,7 @@ function LastBodyFat() {
         {previous.lowPct}–{previous.highPct}
         <span className="text-lg text-muted">%</span>
       </p>
-      <p className="mt-2 text-xs text-muted">Week {previous.week}, from your photos. Add this week&apos;s photos and your coach estimates it again.</p>
+      <p className="mt-2 text-xs text-muted">Week {previous.week}, from your photo. Add this week&apos;s photo and your coach estimates it again.</p>
     </Card>
   );
 }
@@ -154,7 +155,7 @@ export default function CheckInPage() {
   const [sleep, setSleep] = useState("6.4");
   const [vals, setVals] = useState<Record<string, number>>({ ...last.checkin });
   const [notes, setNotes] = useState("Work deadlines all week. Weekdays were on plan but Saturday turned into a takeaway + drinks. Bench felt heavy on Monday.");
-  const [photos, setPhotos] = useState<Partial<Record<View, string>>>({});
+  const [photo, setPhotoState] = useState<string>();
   const [sample, setSample] = useState(false);
   const [phase, setPhase] = useState<"form" | "analysing" | "report">("form");
   const [step, setStep] = useState(0);
@@ -162,24 +163,35 @@ export default function CheckInPage() {
 
   useEffect(() => {
     if (phase !== "analysing") return;
-    const id = setInterval(() => {
-      setStep((s) => {
-        if (s >= analysisSteps.length - 1) {
-          clearInterval(id);
-          setTimeout(() => setPhase("report"), 600);
-          return s;
-        }
-        return s + 1;
-      });
-    }, 650);
-    return () => clearInterval(id);
-  }, [phase]);
+    // last step: hold briefly, then show the report (side effects stay out of the state updater)
+    if (step >= analysisSteps.length - 1) {
+      const t = setTimeout(() => setPhase("report"), 650 + 600);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setStep((s) => s + 1), 650);
+    return () => clearTimeout(t);
+  }, [phase, step]);
+
+  // release blob URLs for replaced or unmounted photos
+  const photoUrls = useRef<string[]>([]);
+  useEffect(() => () => photoUrls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+  const setPhoto = (url: string) =>
+    setPhotoState((old) => {
+      if (old) URL.revokeObjectURL(old);
+      photoUrls.current = [...photoUrls.current.filter((u) => u !== old), url];
+      return url;
+    });
 
   useEffect(() => {
     if (phase !== "form") reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [phase]);
 
-  const photosReady = sample || views.every((v) => photos[v]);
+  const photosReady = sample || !!photo;
+  const numOk = (v: string) => {
+    const n = parseFloat(v.replace(",", "."));
+    return Number.isFinite(n) && n > 0;
+  };
+  const bodyOk = [weight, waist, sleep].every(numOk);
 
   return (
     <>
@@ -192,6 +204,8 @@ export default function CheckInPage() {
           className="space-y-5 lg:col-span-3"
           onSubmit={(e) => {
             e.preventDefault();
+            if (phase !== "form" || !photosReady || !bodyOk) return;
+            setStep(0);
             setPhase("analysing");
           }}
         >
@@ -208,6 +222,7 @@ export default function CheckInPage() {
                   <input
                     inputMode="decimal"
                     value={v as string}
+                    aria-invalid={!numOk(v as string)}
                     onChange={(e) => (set as (s: string) => void)(e.target.value)}
                     className="num mt-1 h-12 w-full rounded-xl border border-line bg-surface-2 px-3 font-display text-2xl font-bold outline-none focus:border-accent"
                   />
@@ -251,19 +266,27 @@ export default function CheckInPage() {
               action={
                 !sample && (
                   <button type="button" onClick={() => setSample(true)} className="text-xs font-medium text-accent hover:underline">
-                    Use sample photos
+                    Use sample photo
                   </button>
                 )
               }
             >
               Progress photos
             </CardTitle>
-            <div className="grid grid-cols-3 gap-3">
-              {views.map((v) => (
-                <PhotoSlot key={v} view={v} src={photos[v]} sample={sample} onFile={(url) => setPhotos((p) => ({ ...p, [v]: url }))} />
-              ))}
+            <div className="flex items-start gap-4">
+              <div className="w-28 shrink-0 sm:w-36">
+                <PhotoSlot src={photo} sample={sample} onFile={setPhoto} />
+              </div>
+              <div className="min-w-0 text-sm">
+                <p className="font-medium">One front-view photo</p>
+                <ul className="mt-2 space-y-1.5 text-muted">
+                  <li>Face the camera, arms relaxed at your sides</li>
+                  <li>Full body in frame, from head to feet</li>
+                  <li>Same spot, lighting and time of day each week</li>
+                </ul>
+              </div>
             </div>
-            <p className="mt-3 text-xs text-muted">Same lighting, same time of day. Photos stay private and are only used for your coaching.</p>
+            <p className="mt-3 text-xs text-muted">Photos stay private and are only used for your coaching.</p>
           </Card>
 
           <Card>
@@ -278,11 +301,11 @@ export default function CheckInPage() {
 
           <button
             type="submit"
-            disabled={phase !== "form" || !photosReady}
+            disabled={phase !== "form" || !photosReady || !bodyOk}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-40"
           >
             <Sparkles className="h-4 w-4" />
-            {phase === "form" ? (photosReady ? "Submit check-in" : "Add 3 photos to submit") : "Check-in submitted"}
+            {phase === "form" ? (photosReady ? "Submit check-in" : "Add your photo to submit") : "Check-in submitted"}
           </button>
         </form>
 

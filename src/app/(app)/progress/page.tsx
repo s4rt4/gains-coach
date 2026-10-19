@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { PhotoCompare } from "@/components/PhotoCompare";
 import { Card, CardTitle, PageHeader, Pill, Stat } from "@/components/ui";
 import { weeks } from "@/data/persona";
-import { photoViews, photoWeeks, progressPhotos, type PhotoView } from "@/data/progress-photos";
+import { photoWeeks, progressPhotos } from "@/data/progress-photos";
 import { getBodyComposition } from "@/lib/analytics";
 
 const fmtDate = (d: string) =>
   new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-type Shot = { week: number; view: PhotoView };
-const shots: Shot[] = [...photoWeeks].reverse().flatMap((week) => photoViews.map((view) => ({ week, view })));
+// front view only, newest first
+const shots: number[] = [...photoWeeks].reverse();
 
 function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => void; onMove: (i: number) => void }) {
-  const s = shots[index];
+  const week = shots[index];
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // move focus into the dialog on open, and give it back to the opener on close
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => opener?.focus?.();
+  }, []);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -36,16 +43,14 @@ function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => vo
   return (
     <div role="dialog" aria-modal="true" aria-label="Photo viewer" className="fixed inset-0 z-50 flex flex-col bg-black/95">
       <div className="flex items-center justify-between px-4 py-3 text-sm">
-        <span className="font-semibold capitalize">
-          Week {s.week} · {s.view}
-        </span>
-        <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-white/80 hover:bg-white/10">
+        <span className="font-semibold">Week {week} · Front</span>
+        <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-white/80 hover:bg-white/10">
           <X className="h-5 w-5" />
         </button>
       </div>
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={progressPhotos[s.week]![s.view]} alt={`Week ${s.week} ${s.view}`} className="max-h-full max-w-full rounded-xl object-contain" />
+        <img src={progressPhotos[week]!.front} alt={`Week ${week} front`} className="max-h-full max-w-full rounded-xl object-contain" />
         <button type="button" aria-label="Previous photo" onClick={() => onMove((index - 1 + shots.length) % shots.length)} className={`${nav} left-3`}>
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -70,7 +75,7 @@ export default function ProgressPage() {
           href="/check-in/"
           className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110"
         >
-          <Camera className="h-4 w-4" /> Add this week&apos;s photos
+          <Camera className="h-4 w-4" /> Add this week&apos;s photo
         </Link>
       </PageHeader>
 
@@ -107,25 +112,23 @@ export default function ProgressPage() {
                     {w.avgWeightKg} kg · waist {w.waistCm} cm · lean ≈ {r.leanKg} kg
                   </p>
                   {set ? (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {photoViews.map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setOpen(shots.findIndex((s) => s.week === r.week && s.view === v))}
-                          className="group relative aspect-[3/5] overflow-hidden rounded-lg"
-                          aria-label={`Open week ${r.week} ${v}`}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={set[v]} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-3 text-left text-[10px] font-semibold uppercase tracking-wider">
-                            {v}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const i = shots.indexOf(r.week);
+                        if (i >= 0) setOpen(i);
+                      }}
+                      className="group relative mt-3 block aspect-[3/5] w-24 overflow-hidden rounded-lg sm:w-28"
+                      aria-label={`Open week ${r.week} front photo`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={set.front} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-3 text-left text-[10px] font-semibold uppercase tracking-wider">
+                        Front
+                      </span>
+                    </button>
                   ) : (
-                    <p className="mt-2 text-xs text-muted">Estimate from photos (not included in the demo set).</p>
+                    <p className="mt-2 text-xs text-muted">Estimate from photo (not included in the demo set).</p>
                   )}
                 </li>
               );

@@ -85,7 +85,7 @@ export const dailyWeights = weeks.flatMap((w) =>
   }),
 );
 
-// Body-fat estimates from the front/side/back check-in photos. The vision model returns a
+// Body-fat estimates from the front-view check-in photo. The vision model returns a
 // range, not a single number: a photo estimate is only good to about ±3%, so the range is
 // what we store and show. Used for the trend, alongside waist and scale data.
 export const bodyFatEstimates = [

@@ -20,7 +20,8 @@ function RangeBar({ m }: { m: Marker }) {
   const pad = (hi - lo) * 0.5;
   const dMin = m.low === undefined ? 0 : lo - pad;
   const dMax = hi + pad;
-  const pct = (v: number) => Math.min(97, Math.max(3, ((v - dMin) / (dMax - dMin)) * 100));
+  const span = dMax - dMin;
+  const pct = (v: number) => (span > 0 ? Math.min(97, Math.max(3, ((v - dMin) / span) * 100)) : 50);
   return (
     <div className="relative h-2 w-full rounded-full bg-surface-2">
       <div className="absolute inset-y-0 rounded-full bg-ok/20" style={{ left: `${pct(lo)}%`, right: `${100 - pct(hi)}%` }} />
@@ -38,7 +39,8 @@ function RangeBar({ m }: { m: Marker }) {
 function rangeText(m: Marker) {
   if (m.low !== undefined && m.high !== undefined) return `${m.low}–${m.high}`;
   if (m.high !== undefined) return `< ${m.high}`;
-  return `> ${m.low}`;
+  if (m.low !== undefined) return `> ${m.low}`;
+  return "—";
 }
 
 function MarkerRow({ m }: { m: Marker }) {
@@ -187,6 +189,7 @@ export default function BloodWorkPage() {
                 PDF or photo from any UK lab (Medichecks, Randox, NHS, private clinics). Markers are extracted automatically.
               </p>
               <button
+                type="button"
                 onClick={() => setPhase("parsing")}
                 className="mt-6 flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition hover:brightness-110"
               >
@@ -236,6 +239,7 @@ export default function BloodWorkPage() {
 
           {!analyse && (
             <button
+              type="button"
               onClick={() => setAnalyse(true)}
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 font-semibold text-accent-ink transition hover:brightness-110"
             >

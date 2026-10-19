@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Smartphone, TriangleAlert, X } from "lucide-react";
 import { Card, PageHeader, Pill } from "@/components/ui";
@@ -51,6 +51,7 @@ export default function AdminUsers() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, email or partner code"
+            aria-label="Search members"
             className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
           />
         </label>
@@ -88,7 +89,15 @@ export default function AdminUsers() {
                 <tr
                   key={u.id}
                   onClick={() => setSelected(u)}
-                  className={`cursor-pointer border-b border-line/70 transition last:border-0 hover:bg-surface-2 ${selected?.id === u.id ? "bg-surface-2" : ""}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(u);
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label={`Open ${u.name}`}
+                  className={`cursor-pointer border-b border-line/70 outline-none transition focus-visible:bg-surface-2 last:border-0 hover:bg-surface-2 ${selected?.id === u.id ? "bg-surface-2" : ""}`}
                 >
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
@@ -135,10 +144,18 @@ export default function AdminUsers() {
 
 function UserPanel({ user, onClose }: { user: AdminUser; onClose: () => void }) {
   const s = statusPill[user.status];
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-end bg-black/50 backdrop-blur-[2px] sm:items-stretch" onClick={onClose}>
       <aside
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={user.name}
         className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-surface p-6 sm:max-h-none sm:w-[400px] sm:rounded-none sm:border-y-0 sm:border-r-0"
       >
         <div className="flex items-start justify-between gap-3">

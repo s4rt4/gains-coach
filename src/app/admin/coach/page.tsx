@@ -36,6 +36,7 @@ export default function AdminCoach() {
 
   const upload = () => {
     const doc: Doc = { name: "Peak week & refeeds.pdf", detail: "Contest prep protocols", chunks: 0, updated: "Today", state: "uploading" };
+    if (docs.some((d) => d.name === doc.name)) return; // demo has one sample file; a second click would duplicate it
     setDocs((d) => [doc, ...d]);
     setTimeout(() => setDocs((d) => d.map((x) => (x.name === doc.name ? { ...x, state: "indexing" } : x))), 1200);
     setTimeout(() => setDocs((d) => d.map((x) => (x.name === doc.name ? { ...x, state: undefined, chunks: 47 } : x))), 2800);
@@ -113,7 +114,8 @@ export default function AdminCoach() {
             action={
               <button
                 onClick={upload}
-                className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold transition hover:border-accent hover:text-accent"
+                disabled={docs.length > knowledgeBase.length}
+                className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold transition hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-50"
               >
                 <Upload className="h-3.5 w-3.5" />
                 Upload

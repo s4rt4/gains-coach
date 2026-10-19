@@ -11,6 +11,8 @@ export type Suggested = {
   spoken?: string;
   /** "Thinking" steps shown while the answer is prepared. */
   checking?: string[];
+  /** Short "key takeaways" shown under the answer and saved to the member's notes. Not spoken. */
+  takeaways: string[];
 };
 
 // Display order for the question chips: newest topics first.
@@ -23,6 +25,12 @@ const questions: Suggested[] = [
   {
     id: "calories",
     question: "Should I reduce my calories this week?",
+    takeaways: [
+      "Keep the target at 2,400 kcal and 210 g protein for now. No cut yet.",
+      "Cap Saturday and Sunday at 2,700 kcal and plan the weekend meal in advance.",
+      "Get steps back to 9,000+ a day. A 20-minute walk after lunch covers most of the gap.",
+      "If the weekly average drops by less than 0.3 kg at Monday's check-in, calories go to 2,250.",
+    ],
     sources: ["Bodyweight · 84 days", "Nutrition · 84 days", "Steps", "Check-ins"],
     checking: ["Reading 84 days of bodyweight", "Checking weekday vs weekend calories", "Reviewing your steps"],
     spoken:
@@ -49,6 +57,12 @@ If I cut your calories now, we'd be cutting a target you're not hitting. That ju
   {
     id: "bench",
     question: "How can I improve my bench press?",
+    takeaways: [
+      "Bench is down 4.9% (123 → 117 kg estimated 1RM) while squat is up, so it's the lift, not the diet.",
+      "Add paused bench, 3 × 4 at 85 kg, on Upper B.",
+      "On Push A, stop at a top set of RPE 8, then 2 back-off sets at −10%. Add close-grip bench or dips, 3 × 8.",
+      "Get sleep back to 7 h+. Holding 117–120 kg during the cut counts as a win.",
+    ],
     sources: ["Hevy · Bench Press, 12 weeks", "Sleep", "Check-ins"],
     checking: ["Reading 12 weeks of bench sessions", "Comparing with your squat", "Checking your sleep"],
     spoken:
@@ -74,6 +88,12 @@ If I cut your calories now, we'd be cutting a target you're not hitting. That ju
   {
     id: "mealprep",
     question: "Give me high-protein meal prep ideas for this week",
+    takeaways: [
+      "Three Sunday batches, about 90 minutes: overnight oats, chicken burrito bowl, turkey bolognese.",
+      "The daily template is ≈2,140 kcal and 206 g protein, leaving about 260 kcal of flexibility.",
+      "Make 5 jars of oats at once. They keep for 4 days, so make Thursday's fresh.",
+      "Saturday \"fakeaway\": bolognese with pitta garlic bread keeps the day around 2,600 kcal.",
+    ],
     sources: ["Targets · 2,400 kcal / 210 g P", "Nutrition patterns"],
     checking: ["Checking your targets", "Remembering you don't eat fish", "Building a batch plan"],
     spoken:
@@ -103,6 +123,12 @@ You're averaging **3,360 kcal** on weekends, so the plan has to work there too. 
   {
     id: "progress",
     question: "Am I on track for my goal?",
+    takeaways: [
+      "Down 4.0 kg (92.1 → 88.1 kg) and 5.5 cm off the waist in 12 weeks.",
+      "3.1 kg to go in 10 weeks needs 0.31 kg/week. The current pace is 0.13 kg/week.",
+      "Main causes: weekend calories (+1,050 kcal/day) and steps down by about 2,700/day.",
+      "Fix those two and you're back at 0.35–0.45 kg/week without cutting food.",
+    ],
     sources: ["Bodyweight trend", "Waist", "Goal · 85 kg by 20 Dec"],
     checking: ["Reading your bodyweight trend", "Checking your holiday deadline", "Working out the pace you need"],
     spoken:
@@ -125,6 +151,12 @@ Fix the first two and you're back at **0.35–0.45 kg/week** without cutting foo
   {
     id: "programme",
     question: "Should I change my workout programme?",
+    takeaways: [
+      "No new programme needed: squat is up 4.3% and deadlift is holding at 210 kg.",
+      "On busy weeks, do a 35-minute \"minimum day\" (main lift and one accessory) instead of skipping.",
+      "Bench twice a week instead of once.",
+      "Trim Legs A volume by about 10% by cutting the leg extension back-off sets.",
+    ],
     sources: ["Hevy · 60 workouts", "Volume", "Recovery scores"],
     checking: ["Reading 60 Hevy workouts", "Counting your weekly hard sets", "Checking recovery scores"],
     spoken:
@@ -147,6 +179,12 @@ We'll review the programme properly at the end of the cut, when we move you to a
   {
     id: "takeaway",
     question: "What should I order at the takeaway on Saturday?",
+    takeaways: [
+      "Keep the takeaway. The drinks and sides are the problem: Saturdays average 3,480 kcal.",
+      "Order a tandoori grill, shawarma plate or chow mein with rice, and skip the naan (−400 kcal).",
+      "Cap it at 2 drinks, with a pint of water in between.",
+      "Hit 160 g protein by 6 pm, leaving about 1,000 kcal for the evening and 2,700 kcal for the day.",
+    ],
     sources: ["Nutrition · weekends", "Memory · Saturday takeaway", "Targets · 2,400 kcal"],
     checking: ["Reading your weekend logs", "Checking what you usually order", "Fitting it into 2,700 kcal"],
     spoken:
@@ -174,6 +212,12 @@ Eat normally until lunch, keep protein at **160 g by 6 pm**, and that leaves abo
   {
     id: "bodyfat",
     question: "How much body fat have I actually lost?",
+    takeaways: [
+      "About 4.4 kg of fat lost in 12 weeks, with lean mass holding at ≈72.7 kg.",
+      "Photo estimate went from 20–23% to 16–19%. It's only good to about ±3%, so watch the trend.",
+      "Waist (−5.5 cm) is the most reliable signal, and it agrees.",
+      "At 85 kg you'd be at about 14–17% body fat.",
+    ],
     sources: ["Check-in photos · weeks 1, 4, 8, 12", "Bodyweight trend", "Waist"],
     checking: ["Comparing your week 1 and week 12 photos", "Matching it to your scale trend", "Checking your waist"],
     spoken:
@@ -197,6 +241,12 @@ Eat normally until lunch, keep protein at **160 g by 6 pm**, and that leaves abo
   {
     id: "bloods",
     question: "What do my latest blood results mean?",
+    takeaways: [
+      "Haematocrit 0.53 and oestradiol 245 pmol/L are above range and need action.",
+      "Suggested change: 250 → 150–175 mg/week, split Monday and Thursday. No aromatase inhibitor yet.",
+      "Watch HDL 0.82 and LDL 3.9: more cardio, fibre and omega-3. Ask for a cystatin C test.",
+      "Take the Protocol adjustments card to your prescriber and re-test 6–8 weeks after any change.",
+    ],
     sources: ["Blood panel · 9 Oct", "Panel · 14 May", "Memory · declared protocol"],
     checking: ["Reading your 9 October panel", "Comparing with May", "Checking your declared protocol"],
     spoken:
@@ -225,6 +275,12 @@ Ferritin, triglycerides, glucose, HbA1c, prolactin and PSA are all in range. Vit
   {
     id: "shoulder",
     question: "My left shoulder hurts on overhead press. What should I do?",
+    takeaways: [
+      "Don't push through it. Swap barbell overhead press for half-kneeling landmine press, 3 × 8–10, for 2 weeks.",
+      "Keep cable lateral raises, and add face pulls or band pull-aparts, 2 × 15, every upper session.",
+      "Pain up to 3/10 that's gone by morning is fine. Sharper pain, night pain or weakness: book a physio.",
+      "If it settles, bring the barbell back at 60 kg and build up over 3 sessions.",
+    ],
     sources: ["Memory · left shoulder", "Hevy · Overhead Press, 12 weeks"],
     checking: ["Checking your shoulder notes", "Reading your pressing history", "Finding swaps that suit you"],
     spoken:
@@ -250,6 +306,12 @@ If it's settled after 2 weeks, we'll bring the barbell back at **60 kg** and bui
   {
     id: "sleep",
     question: "How do I fix my sleep?",
+    takeaways: [
+      "Sleep has dropped from 7.4 h to 6.4 h, in step with rising hunger and a slipping bench.",
+      "Screens off at 23:00 and last coffee by 14:00.",
+      "Same alarm every day, including Sunday.",
+      "Target: 7 h+ on at least 5 nights a week.",
+    ],
     sources: ["Sleep · 84 days", "Check-ins · stress", "Memory · screens off at 23:00"],
     checking: ["Reading 12 weeks of sleep data", "Lining it up with stress and hunger", "Checking your habits"],
     spoken:
@@ -273,6 +335,12 @@ If it's settled after 2 weeks, we'll bring the barbell back at **60 kg** and bui
   {
     id: "aftercut",
     question: "What happens after the cut finishes?",
+    takeaways: [
+      "Holiday (22 Dec – 1 Jan): no tracking, 150 g protein a day, expect 1–2 kg of food and water.",
+      "January: maintenance at about 2,900 kcal for 3–4 weeks, protein at 190–200 g.",
+      "From February: lean bulk at about 3,300 kcal, gaining 0.25–0.35 kg a week.",
+      "Bench twice a week, aiming for a PR in April or May.",
+    ],
     sources: ["Memory · lean bulk from January", "Goal · 85 kg by 20 Dec", "Maintenance estimate"],
     checking: ["Checking your goals", "Estimating maintenance at 85 kg", "Planning the next phase"],
     spoken:
@@ -298,6 +366,12 @@ No tracking. Aim for **150 g protein a day** and a walk most days. Expect **1–
   {
     id: "dietbreak",
     question: "Should I take a diet break?",
+    takeaways: [
+      "No full diet break: you need 0.31 kg/week to reach 85 kg by 20 December.",
+      "Add two higher-carb days on Legs A and Push A: +300 kcal, all from carbs.",
+      "Keep 2,400 kcal on the other days, so the weekly average lands near 2,485 kcal.",
+      "The proper break is January's maintenance phase.",
+    ],
     sources: ["Check-ins · hunger & energy", "Goal · 85 kg by 20 Dec", "Bodyweight trend"],
     checking: ["Reading your hunger and energy scores", "Checking time left to your goal", "Weighing up a break"],
     spoken:
@@ -319,6 +393,12 @@ No tracking. Aim for **150 g protein a day** and a walk most days. Expect **1–
   {
     id: "supplements",
     question: "What supplements are actually worth taking?",
+    takeaways: [
+      "Keep creatine at 5 g/day, but pause it 7 days before your next blood test.",
+      "Add vitamin D3, 1,000–2,000 IU/day. Yours came back at 48 nmol/L.",
+      "Add omega-3, 1–2 g EPA + DHA a day, as you don't eat fish and your HDL is low.",
+      "Skip fat burners, BCAAs and \"test boosters\".",
+    ],
     sources: ["Blood panel · vitamin D, HDL", "Memory · creatine 5 g, no fish", "Nutrition log"],
     checking: ["Checking your blood panel", "Reading your diet notes", "Filtering out what you don't need"],
     spoken:
@@ -345,6 +425,12 @@ No tracking. Aim for **150 g protein a day** and a walk most days. Expect **1–
   {
     id: "travel",
     question: "I'm travelling for work next week. How do I stay on track?",
+    takeaways: [
+      "Aim to hold, not progress: 3 sessions of 45 minutes using the minimum-day format.",
+      "Protein first: 200 g a day. Pack 2 protein bars and a shaker with whey.",
+      "Walk 10,000 steps a day, and don't stress if calories come in 100–200 over.",
+      "Expect the scale to read 0.5–1 kg higher when you're back. Give it 3–4 days.",
+    ],
     sources: ["Memory · 06:30 training, 75 min", "Targets · 2,400 kcal / 210 g P", "Hevy · programme"],
     checking: ["Checking your training schedule", "Building a hotel version", "Planning food on the road"],
     spoken:

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { ChevronsLeftRight } from "lucide-react";
-import { photoViews, photoWeeks, progressPhotos, type PhotoView } from "@/data/progress-photos";
+import { photoWeeks, progressPhotos } from "@/data/progress-photos";
 
-/** Two check-ins, same angle: drag to wipe between them, or show them side by side. */
+/** Two check-ins, front view: drag to wipe between them, or show them side by side. */
 export function PhotoCompare({
   before = photoWeeks[0],
   after = photoWeeks[photoWeeks.length - 1],
@@ -16,7 +16,6 @@ export function PhotoCompare({
   allowSideBySide?: boolean;
   size?: string;
 }) {
-  const [view, setView] = useState<PhotoView>("front");
   const [pos, setPos] = useState(50);
   const [mode, setMode] = useState<"wipe" | "side">("wipe");
   const a = progressPhotos[before]!, b = progressPhotos[after]!;
@@ -44,10 +43,7 @@ export function PhotoCompare({
         <p className="text-sm font-semibold">
           Week {before} vs week {after}
         </p>
-        <div className="flex flex-wrap gap-2">
-          {allowSideBySide && seg(["wipe", "side"] as const, mode, setMode, "Compare mode", (v) => (v === "wipe" ? "Slider" : "Side by side"))}
-          {seg(photoViews, view, setView, "Photo angle")}
-        </div>
+        {allowSideBySide && seg(["wipe", "side"] as const, mode, setMode, "Compare mode", (v) => (v === "wipe" ? "Slider" : "Side by side"))}
       </div>
 
       {mode === "side" ? (
@@ -58,7 +54,7 @@ export function PhotoCompare({
           ].map(({ w, set }) => (
             <figure key={w} className="relative aspect-[3/5] overflow-hidden rounded-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={set[view]} alt={`Week ${w} ${view}`} className="h-full w-full object-cover" />
+              <img src={set.front} alt={`Week ${w} front`} className="h-full w-full object-cover" />
               <figcaption className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-semibold">WEEK {w}</figcaption>
             </figure>
           ))}
@@ -66,11 +62,11 @@ export function PhotoCompare({
       ) : (
         <div className={`relative mx-auto aspect-[3/5] ${size} select-none overflow-hidden rounded-xl`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={b[view]} alt={`Week ${after} ${view}`} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+          <img src={b.front} alt={`Week ${after} front`} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={a[view]}
-            alt={`Week ${before} ${view}`}
+            src={a.front}
+            alt={`Week ${before} front`}
             className="absolute inset-0 h-full w-full object-cover"
             style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
             draggable={false}

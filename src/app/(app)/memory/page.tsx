@@ -32,6 +32,12 @@ function MemoryRow({
             rows={2}
             autoFocus
             aria-label="Edit memory"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setDraft(m.text);
+                setEditing(false);
+              }
+            }}
             className="min-w-0 flex-1 resize-none rounded-lg border border-accent bg-surface-2 px-3 py-2 text-sm outline-none"
           />
           <div className="flex flex-col gap-1">
@@ -78,7 +84,15 @@ function MemoryRow({
             <button type="button" aria-label={m.pinned ? "Unpin" : "Pin"} onClick={onPin} className={icon}>
               {m.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
             </button>
-            <button type="button" aria-label="Edit" onClick={() => setEditing(true)} className={icon}>
+            <button
+              type="button"
+              aria-label="Edit"
+              onClick={() => {
+                setDraft(m.text);
+                setEditing(true);
+              }}
+              className={icon}
+            >
               <Pencil className="h-4 w-4" />
             </button>
             <button type="button" aria-label="Forget" onClick={onForget} className={`${icon} hover:text-danger`}>
@@ -102,6 +116,7 @@ export default function MemoryPage() {
   const update = (id: string, patch: Partial<MemoryItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const forget = (id: string) => {
     const index = items.findIndex((x) => x.id === id);
+    if (index < 0) return;
     setForgotten({ item: items[index], index });
     setItems((xs) => xs.filter((x) => x.id !== id));
   };

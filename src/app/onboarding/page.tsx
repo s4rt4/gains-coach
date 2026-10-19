@@ -84,18 +84,29 @@ export default function OnboardingPage() {
   const [enhanced, setEnhanced] = useState<"no" | "yes" | "skip" | null>(null);
   const [links, setLinks] = useState<Record<string, "idle" | "linking" | "done">>({});
   const [built, setBuilt] = useState(0);
+  const [now] = useState(() => Date.now()); // fixed at mount, so render stays pure
 
   const set = <K extends keyof Answers>(k: K, v: Answers[K]) => setA((x) => ({ ...x, [k]: v }));
+  // the demo default goal date is fixed; once it has passed, move it 10 weeks out so step 3 stays usable
+  useEffect(() => {
+    if (Date.parse(a.goalDate) > now) return;
+    const d = new Date(now + 70 * 864e5).toISOString().slice(0, 10);
+    const id = setTimeout(() => set("goalDate", d), 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const t = startingTargets(a);
   const pctPerWeek = Math.abs(t.ratePerWeek / a.weightKg) * 100;
   const tooFast = (a.phase === "cut" && pctPerWeek > 1) || (a.phase === "bulk" && pctPerWeek > 0.5);
   const goalWrongWay = (a.phase === "cut" && a.goalWeightKg >= a.weightKg) || (a.phase === "bulk" && a.goalWeightKg <= a.weightKg);
+  const goalDateOk = Date.parse(a.goalDate) > now;
+  const targetsOk = [t.kcal, t.proteinG, t.carbsG, t.fatG, t.maintenance, t.ratePerWeek].every(Number.isFinite);
   const remembered = [injuries.trim(), avoid.length ? `Avoids ${avoid.join(", ").toLowerCase()}` : "", diet !== diets[0] ? diet : "", `${a.days} days a week, ${sessionMin} min sessions`].filter(Boolean);
 
   const canContinue = [
     name.trim() && /\S+@\S+\.\S+/.test(email),
-    a.age > 15 && a.heightCm > 120 && a.weightKg > 35,
-    a.goalWeightKg > 35 && !!a.goalDate && !goalWrongWay,
+    a.age > 15 && a.age < 100 && a.heightCm > 120 && a.heightCm < 250 && a.weightKg > 35 && a.weightKg < 300,
+    a.goalWeightKg > 35 && a.goalWeightKg < 300 && goalDateOk && !goalWrongWay,
     true,
     true,
     enhanced !== null,
@@ -224,9 +235,11 @@ export default function OnboardingPage() {
                   Maintenance ≈ {t.maintenance.toLocaleString("en-GB")} kcal ·{" "}
                   {goalWrongWay
                     ? "goal weight doesn't match the phase"
-                    : `${t.ratePerWeek > 0 ? "+" : ""}${t.ratePerWeek} kg / week over ${t.weeks} weeks`}
+                    : targetsOk
+                      ? `${t.ratePerWeek > 0 ? "+" : ""}${t.ratePerWeek} kg / week over ${t.weeks} weeks`
+                      : "—"}
                 </p>
-                {tooFast && !goalWrongWay && (
+                {tooFast && !goalWrongWay && goalDateOk && (
                   <p className="mt-3 rounded-lg bg-warn/12 px-3 py-2 text-xs text-warn">
                     That&apos;s faster than {a.phase === "cut" ? "1%" : "0.5%"} of bodyweight a week. Your coach will suggest a later date so
                     you {a.phase === "cut" ? "keep your muscle" : "gain mostly muscle"}.
@@ -393,7 +406,7 @@ export default function OnboardingPage() {
           {step === 7 && (
             <>
               <h1 className="font-display text-4xl font-bold uppercase leading-none">
-                {built < building.length ? "Building your plan" : `You're set, ${name.split(" ")[0]}`}
+                {built < building.length ? "Building your plan" : `You're set, ${name.trim().split(/\s+/)[0]}`}
               </h1>
               <ul className="mt-6 space-y-2.5">
                 {building.map((b, i) => (
@@ -411,7 +424,7 @@ export default function OnboardingPage() {
                       {t.kcal.toLocaleString("en-GB")} kcal · {t.proteinG} g protein
                     </p>
                     <p className="mt-2 text-sm text-muted">
-                      {phases.find((p) => p.id === a.phase)!.label} to {a.goalWeightKg} kg · {a.days} days of {split}
+                      {phases.find((p) => p.id === a.phase)?.label} to {a.goalWeightKg} kg · {a.days} days of {split}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-line bg-surface p-4">

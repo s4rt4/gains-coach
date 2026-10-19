@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, Link2, Plus, X } from "lucide-react";
 import { Card, CardTitle, PageHeader, Pill, Stat } from "@/components/ui";
 import { InfluencerChart } from "@/components/AdminCharts";
@@ -110,6 +110,7 @@ export default function AdminInfluencers() {
       {adding && (
         <AddPartner
           onClose={() => setAdding(false)}
+          taken={list.map((i) => i.code)}
           onAdd={(inf) => {
             setList((l) => [...l, inf]);
             setAdding(false);
@@ -120,10 +121,19 @@ export default function AdminInfluencers() {
   );
 }
 
-function AddPartner({ onClose, onAdd }: { onClose: () => void; onAdd: (i: Influencer) => void }) {
+function AddPartner({ onClose, onAdd, taken }: { onClose: () => void; onAdd: (i: Influencer) => void; taken: string[] }) {
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
-  const code = (name.split(" ").at(-1) || "").replace(/[^a-z]/gi, "").toUpperCase().slice(0, 10);
+  const base = (name.trim().split(/\s+/).at(-1) || "").replace(/[^a-z]/gi, "").toUpperCase().slice(0, 10);
+  // Codes are the partner's key: suffix a number if this one is already used
+  let code = base;
+  for (let n = 2; code && taken.includes(code); n++) code = base.slice(0, 10 - String(n).length) + n;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/55 backdrop-blur-[2px] sm:items-center" onClick={onClose}>
@@ -132,8 +142,11 @@ function AddPartner({ onClose, onAdd }: { onClose: () => void; onAdd: (i: Influe
         onSubmit={(e) => {
           e.preventDefault();
           if (!code) return;
-          onAdd({ name, handle: handle || "@" + code.toLowerCase(), audience: "—", code, signups: 0, active: 0, status: "new" });
+          onAdd({ name: name.trim(), handle: handle || "@" + code.toLowerCase(), audience: "—", code, signups: 0, active: 0, status: "new" });
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="New partner"
         className="w-full rounded-t-2xl border border-line bg-surface p-6 sm:max-w-md sm:rounded-2xl"
       >
         <div className="flex items-center justify-between">

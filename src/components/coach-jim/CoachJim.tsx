@@ -52,6 +52,8 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
   const finish = useRef<(() => void) | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const frame = useRef(0);
+  /** Bumped on every speak/stop, so callbacks from an earlier utterance can't end or animate a newer one. */
+  const gen = useRef(0);
 
   const part = (id: string) => host.current?.querySelector<SVGGElement>(`[id="${id}"]`) ?? null;
 
@@ -118,11 +120,18 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
   const timedSequence = (text: string) => text.split(/\s+/).filter(Boolean).flatMap((w) => wordSteps(w, wordMs(w)));
 
   const stop = () => {
+    gen.current++;
     clearTimeout(talkTimer.current);
     cancelAnimationFrame(frame.current);
-    audio.current?.pause();
+    const a = audio.current;
     audio.current = null;
-    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (a) {
+      a.onplaying = a.onended = a.onerror = null;
+      try { a.pause(); } catch {}
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try { window.speechSynthesis.cancel(); } catch {}
+    }
     state.current.talking = false;
     rest();
     finish.current?.();
@@ -130,7 +139,7 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
   };
 
   /** Plays a pre-rendered clip; the mouth follows the audio clock, so it stays in sync. False if it can't play. */
-  const playClip = (clip: SpeechClip, end: () => void) => {
+  const playClip = (clip: SpeechClip, end: () => void, onFail: () => void) => {
     const a = new Audio(clip.src);
     audio.current = a;
     const words = clip.words.map(([t, d, w]) => ({ t, d, shapes: shapesFor(w, d) }));
@@ -159,16 +168,32 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
       tick();
     };
     if (!wall) a.onended = end;
-    return a.play().then(() => true, () => false);
+    // Missing file / decode error after play() resolved: fall back to the browser voice once.
+    let failed = false;
+    const fail = () => {
+      if (failed || audio.current !== a) return;
+      failed = true;
+      cancelAnimationFrame(frame.current);
+      a.onplaying = a.onended = a.onerror = null;
+      audio.current = null;
+      onFail();
+    };
+    a.onerror = fail;
+    try {
+      a.play().catch(fail);
+    } catch {
+      fail();
+    }
   };
 
   const speak = (text: string, clip?: SpeechClip) =>
     new Promise<void>((resolve) => {
       stop();
+      const id = gen.current;
       state.current.talking = true;
       finish.current = resolve;
       const end = () => {
-        if (!state.current.talking) return;
+        if (id !== gen.current || !state.current.talking) return;
         state.current.talking = false;
         clearTimeout(talkTimer.current);
         rest();
@@ -177,19 +202,16 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
       };
 
       if (clip) {
-        playClip(clip, end).then((ok) => {
-          if (!ok && state.current.talking) {
-            audio.current = null;
-            browserVoice(text, end);
-          }
+        playClip(clip, end, () => {
+          if (id === gen.current && state.current.talking) browserVoice(text, end, id);
         });
         return;
       }
-      browserVoice(text, end);
+      browserVoice(text, end, id);
     });
 
-  const browserVoice = (text: string, end: () => void) => {
-    if (!("speechSynthesis" in window)) {
+  const browserVoice = (text: string, end: () => void, id: number) => {
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
       play(timedSequence(text), end);
       return;
     }
@@ -199,7 +221,7 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
     u.pitch = 0.8;
     let gotBoundary = false;
     u.onboundary = (ev) => {
-      if (ev.name && ev.name !== "word") return;
+      if (id !== gen.current || (ev.name && ev.name !== "word")) return;
       gotBoundary = true;
       const word = text.slice(ev.charIndex).split(/\s+/)[0] ?? "";
       // if the voice moved on before the last word's rest, close the mouth briefly first
@@ -208,10 +230,15 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
     };
     u.onend = end;
     u.onerror = end;
-    window.speechSynthesis.speak(u);
+    try {
+      window.speechSynthesis.speak(u);
+    } catch {
+      play(timedSequence(text), end);
+      return;
+    }
     // Some voices never fire word events: animate on a timer instead.
     setTimeout(() => {
-      if (state.current.talking && !gotBoundary) play(timedSequence(text));
+      if (id === gen.current && state.current.talking && !gotBoundary) play(timedSequence(text));
     }, 700);
   };
 
@@ -242,13 +269,18 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
     setExpression(state.current.expression);
 
     let blinkT: ReturnType<typeof setTimeout>, gazeT: ReturnType<typeof setTimeout>, headT: ReturnType<typeof setTimeout>;
+    const blinkSteps: ReturnType<typeof setTimeout>[] = [];
+    let alive = true;
     const blink = () => {
       blinkT = setTimeout(() => {
         const base = EXPRESSIONS[state.current.expression].lids;
         setLids("half");
-        setTimeout(() => setLids("closed"), 50);
-        setTimeout(() => setLids("half"), 130);
-        setTimeout(() => { setLids(base); blink(); }, 180);
+        blinkSteps.length = 0;
+        blinkSteps.push(
+          setTimeout(() => setLids("closed"), 50),
+          setTimeout(() => setLids("half"), 130),
+          setTimeout(() => { setLids(base); if (alive) blink(); }, 180),
+        );
       }, 2200 + Math.random() * 3000);
     };
     const look = () => {
@@ -276,6 +308,8 @@ export const CoachJim = forwardRef<CoachJimHandle, { viewBox?: string; className
     blink();
     if (!reduced) { look(); moveHead(); }
     return () => {
+      alive = false;
+      blinkSteps.forEach(clearTimeout);
       clearTimeout(blinkT);
       clearTimeout(gazeT);
       clearTimeout(headT);

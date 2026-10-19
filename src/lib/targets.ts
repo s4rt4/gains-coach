@@ -31,7 +31,9 @@ export function startingTargets(a: Answers, today = new Date()) {
   const fatG = to(fatPerKg[a.phase] * a.weightKg, 5);
   const carbsG = Math.max(0, to((kcal - proteinG * 4 - fatG * 9) / 4, 5));
 
-  const weeks = Math.max(1, Math.round((Date.parse(a.goalDate) - today.getTime()) / (7 * 864e5)));
+  const msLeft = Date.parse(a.goalDate) - today.getTime();
+  // no or unparsable goal date: fall back to 12 weeks instead of NaN
+  const weeks = Number.isFinite(msLeft) ? Math.max(1, Math.round(msLeft / (7 * 864e5))) : 12;
   const ratePerWeek = Math.round(((a.goalWeightKg - a.weightKg) / weeks) * 100) / 100;
   return { maintenance, kcal, proteinG, carbsG, fatG, weeks, ratePerWeek };
 }
